@@ -10,11 +10,10 @@ from StringIO import StringIO
 import json
 
 
-USER_AGENT = 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36'
-UTF8          = 'utf-8'
 
 VEVOBASE = 'http://www.vevo.com%s'
 VEVOAPI  = 'https://apiv2.vevo.com%s'
+UTF8     = 'utf-8'
 
 addon         = xbmcaddon.Addon('plugin.video.myvevo')
 __addonname__ = addon.getAddonInfo('name')
@@ -26,14 +25,11 @@ uqp = urllib.unquote_plus
 home          = addon.getAddonInfo('path').decode(UTF8)
 icon          = xbmc.translatePath(os.path.join(home, 'icon.png'))
 addonfanart   = xbmc.translatePath(os.path.join(home, 'fanart.jpg'))
-
+maxitems      = 25
 
 def log(txt):
     message = '%s: %s' % (__addonname__, txt.encode('ascii', 'ignore'))
     xbmc.log(msg=message, level=xbmc.LOGDEBUG)
-
-def cleanname(name):    
-    return name.replace('<p>','').replace('<strong>','').replace('&apos;',"'").replace('&#8217;',"'")
 
 def demunge(munge):
         try:    munge = urllib.unquote_plus(munge).decode(UTF8)
@@ -107,11 +103,13 @@ def getSources(fanart):
            a = getBase()
            ilist = []
            for name, url, mode in [("VEVO TV",VEVOAPI % '/tv/channels?withShows=true&hoursAhead=24&token=%s','GX'),
-                                   ("Artists",VEVOAPI % '/artists?page=1&size=25','GG'),
-                                   ("Videos",VEVOAPI % '/videos?page=1&size=25','GG'),
-                                   ("Premieres",VEVOAPI % '/videos?page=1&size=25&ispremiere=true&sort=MostRecent&token=%s','GD'),
-                                   ("Live Performances",VEVOAPI % '/videos?page=1&size=25&islive=true&sort=MostRecent&token=%s','GD'),
-                                   ("Search",VEVOAPI % '/videos?page=1&size=25','GQ')]:
+                                   ("Trending",VEVOAPI % '/now?page=1&size=%s&token=%s' % (str(maxitems),'%s'),'GD'),
+                                   ("Artists",VEVOAPI % '/artists?page=1&size=%s' % str(maxitems),'GG'),
+                                   ("Videos",VEVOAPI % '/videos?page=1&size=%s' % str(maxitems),'GG'),
+                                   ("Premieres",VEVOAPI % '/videos?page=1&size=%s&ispremiere=true&sort=MostRecent&token=%s' % (str(maxitems),'%s'),'GD'),
+                                   ("Live Performances",VEVOAPI % '/videos?page=1&size=%s&islive=true&sort=MostRecent&token=%s'  % (str(maxitems),'%s'),'GD'),
+                                   ("Search",VEVOAPI % '/videos?page=1&size=%s' % str(maxitems),'GQ')]:
+
               u = '%s?mode=%s&url=%s' %(sys.argv[0], mode, qp(url))
               liz=xbmcgui.ListItem(name, None , icon, icon)
               liz.setInfo( 'Video', { "Title": name })
@@ -163,7 +161,7 @@ def getSort(gsurl):
            gsurl = uqp(gsurl).replace(' ','+')
            a = a["apiParams"]
            if '/artist' in gsurl: b = 'artist'
-           else:                  b = 'video'
+           else:  b = 'video'
            for x in a[b]["sort"]:
               name  = '%s - %s' % (b, a[b]["sort"][x])
               url = '%s&sort=%s&token=%s' % (gsurl, a[b]["sort"][x], '%s')
@@ -194,13 +192,28 @@ def getQuery(url):
         keyb.doModal()
         if (keyb.isConfirmed()):
               text = keyb.getText()
-              qurl = qp(VEVOAPI % ('/search?q=%s&Limit=6&videosLimit=25&skippedVideos=0&token=%s' % (text, '%s')))
+              qurl = qp(VEVOAPI % ('/search?q=%s&Limit=10&videosLimit=%s&skippedVideos=0&token=%s' % (text,str(maxitems), '%s')))
               getData(qurl)
+
+
+def getNext(durl):
+        try:
+             pgex = re.compile('\?page=(.+?)&')
+             pgn  = pgex.search(durl).group(1)
+             pgnxt= '?page=%s&' % str(int(pgn)+1)
+             url = pgex.sub(pgnxt, durl,1)
+             u = '%s?mode=GD&url=%s' %(sys.argv[0], qp(url))
+             liz=xbmcgui.ListItem( '[COLOR blue]Next[/COLOR]', None , icon, icon)
+             liz.setProperty('fanart_image', addonfanart)
+             return (liz,u)
+        except:
+             return (None, None)
 
 
 def getData(durl):
               durl = uqp(durl).replace(' ','+')
               url = durl % getAutho()
+              log( "GD url = "+str(url))
               html = getRequest(url)
               a = json.loads(html)
               loadData(durl,a)
@@ -208,8 +221,8 @@ def getData(durl):
 
 def loadData(durl,a):
               ilist = []
-              if '/artist' in durl:
-                a = a["artists"]
+              if ('/artist' in durl):
+                if not ('/related' in durl) : a = a["artists"]
                 for b in a:
                   name = b["name"]
                   url = VEVOBASE % ('/artist/%s?token=%s' % (b["urlSafeName"], '%s'))
@@ -221,13 +234,19 @@ def loadData(durl,a):
                   artists.append(name)
                   u = '%s?mode=GA&url=%s' %(sys.argv[0], qp(url))
                   liz=xbmcgui.ListItem(name, None , img, img)
+                  curl = VEVOAPI % ('/artist/%s/related?&size=%s&token=%s' % (b["urlSafeName"], str(maxitems), '%s'))
+                  cm = [('Get Related','XBMC.Container.Update(%s?mode=GD&url=%s)' % (sys.argv[0],qp(curl)))]
+                  liz.addContextMenuItems(cm)
                   liz.setInfo( 'Video', { "Title": name, "Artist": artists })
                   liz.setProperty('fanart_image', addonfanart)
                   ilist.append((u, liz, True))
+                if len(ilist) == maxitems:
+                  liz,u = getNext(durl)
+                  if liz != None: ilist.append((u, liz, True))
                 xbmcplugin.addDirectoryItems(int(sys.argv[1]), ilist, len(ilist))
                 return
 
-              elif ('/video' in durl) or ('/search' in durl):  a = a["videos"]
+              elif (('/video' in durl) and (not('/related' in durl))) or ('/search' in durl): a = a["videos"]
               elif '/now' in durl:   a = a["nowPosts"]
               fanart =''
               for c in a:
@@ -257,14 +276,21 @@ def loadData(durl,a):
                   for x in c["artists"]: artists.append(x["name"])
                   album = artists[0]
 
-                  url  = VEVOAPI % ('/video/%s/streams/hls?token=' % isrc)
+                  url   = VEVOAPI % ('/video/%s/streams/hls?token=' % isrc)
+                  vname = '%s - %s' % (album, name)
                   u = '%s?mode=GV&url=%s' %(sys.argv[0], qp(url))
-                  liz=xbmcgui.ListItem( '%s - %s' % (album, name), None , img, img)
+                  liz=xbmcgui.ListItem( vname , None , img, img)
+                  curl = VEVOAPI % ('/video/%s/related?&size=%s&token=%s' % (isrc, str(maxitems), '%s'))
+                  cm = [('Get Related','XBMC.Container.Update(%s?mode=GD&url=%s)' % (sys.argv[0],qp(curl)))]
+                  liz.addContextMenuItems(cm)
                   liz.setInfo( 'Video', { "Title": name, "Artist": artists, "Year" : year, "Album": album })
                   liz.setProperty('fanart_image', fanart)
                   liz.setProperty('IsPlayable', 'true')
                   liz.setProperty('mimetype', 'video/x-msvideo')
                   ilist.append((u, liz, False))
+              if len(ilist) == maxitems:
+                  liz,u = getNext(durl)
+                  if liz != None: ilist.append((u, liz, True))
               xbmcplugin.addDirectoryItems(int(sys.argv[1]), ilist, len(ilist))
 
 def getVideo(caturl):
@@ -273,7 +299,8 @@ def getVideo(caturl):
               a    = json.loads(html)
               for b in a:
                 if b["version"] == 2:
-                   xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, xbmcgui.ListItem(path = b["url"]))
+                   liz = xbmcgui.ListItem(path = b["url"])
+                   xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, liz)
 
 
 
