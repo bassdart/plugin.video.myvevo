@@ -194,7 +194,7 @@ def getQuery(url):
         keyb.doModal()
         if (keyb.isConfirmed()):
               text = keyb.getText()
-              qurl = qp(VEVOAPI % ('/search?q=%sLimit=6&videosLimit=25&skippedVideos=0&token=%s' % (text, '%s')))
+              qurl = qp(VEVOAPI % ('/search?q=%s&Limit=6&videosLimit=25&skippedVideos=0&token=%s' % (text, '%s')))
               getData(qurl)
 
 
@@ -227,7 +227,7 @@ def loadData(durl,a):
                 xbmcplugin.addDirectoryItems(int(sys.argv[1]), ilist, len(ilist))
                 return
 
-              elif '/video' in durl:  a = a["videos"]
+              elif ('/video' in durl) or ('/search' in durl):  a = a["videos"]
               elif '/now' in durl:   a = a["nowPosts"]
               fanart =''
               for c in a:
@@ -235,13 +235,13 @@ def loadData(durl,a):
                   except:
                     try:  isrc = c["images"][0]["isrc"]
                     except:
-                       print "nothing found ...."
-                       print "c = "+str(c)
+                       log( "nothing found ....")
+                       log( "c = "+str(c))
                        continue
 
                   try:  year  = c["year"]
                   except:
-                    html = getRequest(VEVOAPI % ('/video/%s?token=%s' % (isrc, token)))
+                    html = getRequest(VEVOAPI % ('/video/%s?token=%s' % (isrc, getAutho())))
                     c = json.loads(html)
                     year  = c["year"]
 
