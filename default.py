@@ -36,10 +36,8 @@ def cleanname(name):
     return name.replace('<p>','').replace('<strong>','').replace('&apos;',"'").replace('&#8217;',"'")
 
 def demunge(munge):
-        try:
-            munge = urllib.unquote_plus(munge).decode(UTF8)
-        except:
-            pass
+        try:    munge = urllib.unquote_plus(munge).decode(UTF8)
+        except: pass
         return munge
 
 USER_AGENT    = 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.93 Safari/537.36'
@@ -97,6 +95,7 @@ def getAutho():
               a = json.loads(html)
               return a["access_token"]
 
+
 def getBase():
            html = getRequest(VEVOBASE % '/browse')
            blob = re.compile('config:(.+?)cdn:').search(html).group(1)
@@ -120,6 +119,7 @@ def getSources(fanart):
               ilist.append((u, liz, True))
            xbmcplugin.addDirectoryItems(int(sys.argv[1]), ilist, len(ilist))
 
+
 def getChannels(curl):
               curl = uqp(curl).replace(' ','+')
               url = curl % getAutho()
@@ -127,10 +127,8 @@ def getChannels(curl):
               a = json.loads(html)
               ilist =[]
               for b in a:
-                  try:
-                     img = b["thumbnailUrl"]
-                  except:
-                     img = None
+                  try:    img = b["thumbnailUrl"]
+                  except: img = None
                   name = b["name"]
                   u  = b["stream"]
                   plot = b["description"]
@@ -141,9 +139,6 @@ def getChannels(curl):
                   liz.setProperty('mimetype', 'video/x-msvideo')
                   ilist.append((u, liz, False))
               xbmcplugin.addDirectoryItems(int(sys.argv[1]), ilist, len(ilist))
-
-
-
 
 
 def getGenre(ggurl):
@@ -167,10 +162,8 @@ def getSort(gsurl):
            ilist = []
            gsurl = uqp(gsurl).replace(' ','+')
            a = a["apiParams"]
-           if '/artist' in gsurl:
-              b = 'artist'
-           else:
-              b = 'video'
+           if '/artist' in gsurl: b = 'artist'
+           else:                  b = 'video'
            for x in a[b]["sort"]:
               name  = '%s - %s' % (b, a[b]["sort"][x])
               url = '%s&sort=%s&token=%s' % (gsurl, a[b]["sort"][x], '%s')
@@ -181,21 +174,20 @@ def getSort(gsurl):
               ilist.append((u, liz, True))
            xbmcplugin.addDirectoryItems(int(sys.argv[1]), ilist, len(ilist))
 
+
 def getArtist(durl):
               durl = uqp(durl).replace(' ','+')
               url = durl % getAutho()
-
               html = getRequest(url)
               blob = re.compile('"data"\:\{"videos"(.+?)\}\]\}\}\};').search(html).group(1)
               blob = '{"videos"'+blob
-              try:
-                a = json.loads(blob)
+              try: a = json.loads(blob)
               except:
                 blob = re.compile('"data"\:\{"videos"(.+?)\}\,\{"key').search(html).group(1)
                 blob = '{"videos"'+blob
                 a = json.loads(blob)
-
               loadData(durl.replace('/artist','/video',1),a)
+
 
 def getQuery(url):
         keyb = xbmc.Keyboard('', __addonname__)
@@ -206,15 +198,13 @@ def getQuery(url):
               getData(qurl)
 
 
-
 def getData(durl):
-              
               durl = uqp(durl).replace(' ','+')
               url = durl % getAutho()
-
               html = getRequest(url)
               a = json.loads(html)
               loadData(durl,a)
+
 
 def loadData(durl,a):
               ilist = []
@@ -223,13 +213,10 @@ def loadData(durl,a):
                 for b in a:
                   name = b["name"]
                   url = VEVOBASE % ('/artist/%s?token=%s' % (b["urlSafeName"], '%s'))
-                  try:
-                    img = b["thumbnailUrl"]
+                  try: img = b["thumbnailUrl"]
                   except:
-                    try:
-                       img = b["image"]
-                    except:
-                       img = None
+                    try: img = b["image"]
+                    except: img = None
                   artists =[]
                   artists.append(name)
                   u = '%s?mode=GA&url=%s' %(sys.argv[0], qp(url))
@@ -240,45 +227,34 @@ def loadData(durl,a):
                 xbmcplugin.addDirectoryItems(int(sys.argv[1]), ilist, len(ilist))
                 return
 
-              elif '/video' in durl:
-                a = a["videos"]
-              elif '/now' in durl:
-                a = a["nowPosts"]
+              elif '/video' in durl:  a = a["videos"]
+              elif '/now' in durl:   a = a["nowPosts"]
               fanart =''
               for c in a:
-                  try:
-                    isrc = c["isrc"]
+                  try: isrc = c["isrc"]
                   except:
-                    try:
-                       isrc = c["images"][0]["isrc"]
+                    try:  isrc = c["images"][0]["isrc"]
                     except:
                        print "nothing found ...."
                        print "c = "+str(c)
                        continue
 
-                  try:
-                    year  = c["year"]
+                  try:  year  = c["year"]
                   except:
                     html = getRequest(VEVOAPI % ('/video/%s?token=%s' % (isrc, token)))
                     c = json.loads(html)
                     year  = c["year"]
 
                   name = c['title']
-                  try:
-                    img = c["thumbnailUrl"]
+                  try:    img = c["thumbnailUrl"]
+                  except: img = None
+                  try:    fanart = c["artists"][0]["thumbnailUrl"]
                   except:
-                    img = None
-                  try:
-                    fanart = c["artists"][0]["thumbnailUrl"]
-                  except:
-                    try:
-                      fanart = c['image']
-                    except:
-                      fanart = addonfanart
+                    try:    fanart = c['image']
+                    except: fanart = addonfanart
 
                   artists = []
-                  for x in c["artists"]:
-                     artists.append(x["name"])
+                  for x in c["artists"]: artists.append(x["name"])
                   album = artists[0]
 
                   url  = VEVOAPI % ('/video/%s/streams/hls?token=' % isrc)
@@ -308,17 +284,12 @@ xbmcplugin.setContent(int(sys.argv[1]), 'musicvideos')
 parms = {}
 try:
     parms = dict( arg.split( "=" ) for arg in ((sys.argv[2][1:]).split( "&" )) )
-    for key in parms:
-       parms[key] = demunge(parms[key])
-except:
-    parms = {}
+    for key in parms: parms[key] = demunge(parms[key])
+except:  parms = {}
 
 p = parms.get
-
-try:
-    mode = p('mode')
-except:
-    mode = None
+try:    mode = p('mode')
+except: mode = None
 
 if mode==  None:  getSources(p('fanart'))
 elif mode=='GX':  getChannels(p('url'))
@@ -330,4 +301,3 @@ elif mode=='GV':  getVideo(p('url'))
 elif mode=='GQ':  getQuery(p('url'))
 
 xbmcplugin.endOfDirectory(int(sys.argv[1]))
-
