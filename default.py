@@ -42,7 +42,7 @@ defaultHeaders = {'User-Agent':USER_AGENT,
                  'Accept-Encoding':'gzip,deflate,sdch',
                  'Accept-Language':'en-US,en;q=0.8'} 
 
-def getRequest(url, user_data=None, headers = defaultHeaders , alert=True):
+def getRequest(url, user_data=None, headers = defaultHeaders , alert=True, doPut=False, doDelete=False ):
 
               log("getRequest URL:"+str(url))
               if addon.getSetting('us_proxy_enable') == 'true':
@@ -63,6 +63,8 @@ def getRequest(url, user_data=None, headers = defaultHeaders , alert=True):
 
               log("getRequest URL:"+str(url))
               req = urllib2.Request(url.encode(UTF8), user_data, headers)
+              if doPut      == True: req.get_method = lambda: 'PUT'
+              elif doDelete == True: req.get_method = lambda: 'DELETE'
 
               try:
                  response = urllib2.urlopen(req)
@@ -83,11 +85,20 @@ def getRequest(url, user_data=None, headers = defaultHeaders , alert=True):
                  link1 = str(link1).replace('\n','')
               return(link1)
 
+
+
 def getAutho():
+              if addon.getSetting('login_name') != '':
+                 vevoName     = addon.getSetting('login_name')
+                 vevoPswd     = addon.getSetting('login_pass')
+                 udata = urllib.urlencode({'username': vevoName, 'password':vevoPswd, 'grant_type':'password'})
+              else:
+                 udata = ' '
+
               azheaders = defaultHeaders
               azheaders['X-Requested-With'] = 'XMLHttpRequest'
-              url = VEVOBASE % '/auth'
-              html = getRequest(url, '' , azheaders)
+              url   = VEVOBASE % '/auth'
+              html  = getRequest(url, udata , azheaders)
               a = json.loads(html)
               return a["access_token"]
 
@@ -99,16 +110,17 @@ def getBase():
            return json.loads(blob)
 
 
-def getSources(fanart):
+def getSources():
            a = getBase()
            ilist = []
-           for name, url, mode in [("VEVO TV",VEVOAPI % '/tv/channels?withShows=true&hoursAhead=24&token=%s','GX'),
-                                   ("Trending",VEVOAPI % '/now?page=1&size=%s&token=%s' % (str(maxitems),'%s'),'GD'),
-                                   ("Artists",VEVOAPI % '/artists?page=1&size=%s' % str(maxitems),'GG'),
-                                   ("Videos",VEVOAPI % '/videos?page=1&size=%s' % str(maxitems),'GG'),
-                                   ("Premieres",VEVOAPI % '/videos?page=1&size=%s&ispremiere=true&sort=MostRecent&token=%s' % (str(maxitems),'%s'),'GD'),
-                                   ("Live Performances",VEVOAPI % '/videos?page=1&size=%s&islive=true&sort=MostRecent&token=%s'  % (str(maxitems),'%s'),'GD'),
-                                   ("Search",VEVOAPI % '/videos?page=1&size=%s' % str(maxitems),'GQ')]:
+           for name, url, mode in [(__language__(30060),VEVOAPI % '/tv/channels?withShows=true&hoursAhead=24&token=%s','GX'),
+                                   (__language__(30061),VEVOAPI % '/now?page=1&size=%s&token=%s' % (str(maxitems),'%s'),'GD'),
+                                   (__language__(30062),VEVOAPI % '/artists?page=1&size=%s' % str(maxitems),'GG'),
+                                   (__language__(30063),VEVOAPI % '/videos?page=1&size=%s' % str(maxitems),'GG'),
+                                   (__language__(30064),VEVOAPI % '/videos?page=1&size=%s&ispremiere=true&sort=MostRecent&token=%s' % (str(maxitems),'%s'),'GD'),
+                                   (__language__(30065),VEVOAPI % '/videos?page=1&size=%s&islive=true&sort=MostRecent&token=%s'  % (str(maxitems),'%s'),'GD'),
+                                   (__language__(30066), ' ', "GP"),
+                                   (__language__(30067),VEVOAPI % '/videos?page=1&size=%s' % str(maxitems),'GQ')]:
 
               u = '%s?mode=%s&url=%s' %(sys.argv[0], mode, qp(url))
               liz=xbmcgui.ListItem(name, None , icon, icon)
@@ -188,7 +200,7 @@ def getArtist(durl):
 
 
 def getQuery(url):
-        keyb = xbmc.Keyboard('', __addonname__)
+        keyb = xbmc.Keyboard('', __language__(30067))
         keyb.doModal()
         if (keyb.isConfirmed()):
               text = keyb.getText()
@@ -203,7 +215,7 @@ def getNext(durl):
              pgnxt= '?page=%s&' % str(int(pgn)+1)
              url = pgex.sub(pgnxt, durl,1)
              u = '%s?mode=GD&url=%s' %(sys.argv[0], qp(url))
-             liz=xbmcgui.ListItem( '[COLOR blue]Next[/COLOR]', None , icon, icon)
+             liz=xbmcgui.ListItem( '[COLOR blue]%s[/COLOR]' % __language__(30068), None , icon, icon)
              liz.setProperty('fanart_image', addonfanart)
              return (liz,u)
         except:
@@ -219,7 +231,7 @@ def getData(durl):
               loadData(durl,a)
 
 
-def loadData(durl,a):
+def loadData(durl,a, PlayList = None):
               ilist = []
               if ('/artist' in durl):
                 if not ('/related' in durl) : a = a["artists"]
@@ -235,7 +247,7 @@ def loadData(durl,a):
                   u = '%s?mode=GA&url=%s' %(sys.argv[0], qp(url))
                   liz=xbmcgui.ListItem(name, None , img, img)
                   curl = VEVOAPI % ('/artist/%s/related?&size=%s&token=%s' % (b["urlSafeName"], str(maxitems), '%s'))
-                  cm = [('Get Related','XBMC.Container.Update(%s?mode=GD&url=%s)' % (sys.argv[0],qp(curl)))]
+                  cm = [(__language__(30069),'XBMC.Container.Update(%s?mode=GD&url=%s)' % (sys.argv[0],qp(curl)))]
                   liz.addContextMenuItems(cm)
                   liz.setInfo( 'Video', { "Title": name, "Artist": artists })
                   liz.setProperty('fanart_image', addonfanart)
@@ -280,8 +292,13 @@ def loadData(durl,a):
                   vname = '%s - %s' % (album, name)
                   u = '%s?mode=GV&url=%s' %(sys.argv[0], qp(url))
                   liz=xbmcgui.ListItem( vname , None , img, img)
+                  if PlayList != None:
+                     cm = [(__language__(30070),'XBMC.RunPlugin(%s?mode=RP&url=%s&puid=%s)' % (sys.argv[0],isrc, PlayList))]
+                  else:
+                     cm = [(__language__(30071),'XBMC.RunPlugin(%s?mode=AP&url=%s)' % (sys.argv[0],isrc))]
+
                   curl = VEVOAPI % ('/video/%s/related?&size=%s&token=%s' % (isrc, str(maxitems), '%s'))
-                  cm = [('Get Related','XBMC.Container.Update(%s?mode=GD&url=%s)' % (sys.argv[0],qp(curl)))]
+                  cm.append((__language__(30069),'XBMC.Container.Update(%s?mode=GD&url=%s)' % (sys.argv[0],qp(curl))))
                   liz.addContextMenuItems(cm)
                   liz.setInfo( 'Video', { "Title": name, "Artist": artists, "Year" : year, "Album": album })
                   liz.setProperty('fanart_image', fanart)
@@ -302,6 +319,115 @@ def getVideo(caturl):
                    liz = xbmcgui.ListItem(path = b["url"])
                    xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, liz)
 
+def getMe(token):
+              url  = VEVOAPI % ('/me?token=%s' % token)
+              html = getRequest(url)
+              a = json.loads(html)
+              try: uid = a['id']
+              except: uid = None
+              return uid
+
+def getPlaylists():
+              if addon.getSetting('login_name') == '':
+                   addon.openSettings()
+                   getSources()
+                   return
+              token = getAutho()
+              uid = getMe(token)
+              html = getRequest(VEVOAPI % ('/user/%s/playlists?token=%s' % (uid,token)))
+              a = json.loads(html)
+              ilist=[]
+              for b in a:
+                  try:    img = b["thumbnailUrl"]
+                  except: img = None
+                  name = b["name"]
+                  plot = b["description"]
+                  u = '%s?mode=GL&url=%s' %(sys.argv[0], qp(b["playlistId"]))
+                  liz=xbmcgui.ListItem( name, None , img, img)
+                  cm = [(__language__(30072),'XBMC.RunPlugin(%s?mode=DP&url=%s)' % (sys.argv[0], b["playlistId"]))]
+                  liz.addContextMenuItems(cm)
+                  liz.setInfo( 'Video', { "Title": name, "Plot" : plot })
+                  liz.setProperty('fanart_image', addonfanart)
+                  ilist.append((u, liz, True))
+
+              u = '%s?mode=CP' %(sys.argv[0])
+              liz=xbmcgui.ListItem( __language__(30073), None , icon, icon)
+              liz.setInfo( 'Video', { "Title": name })
+              liz.setProperty('fanart_image', addonfanart)
+              ilist.append((u, liz, True))
+              xbmcplugin.addDirectoryItems(int(sys.argv[1]), ilist, len(ilist))
+
+def getList(puid):
+              html = getRequest(VEVOAPI % ('/playlist/%s?token=%s' % (puid, getAutho())))
+              a = json.loads(html)
+              loadData('/videos', a, PlayList = puid)
+
+def createList():
+        keyb = xbmc.Keyboard('', __language__(30074))
+        keyb.doModal()
+        if (keyb.isConfirmed()):
+              text = keyb.getText()
+              udata = 'name=%s&Isrcs=undefined' % qp(text)
+              url = VEVOAPI % ('/me/playlists?token=%s' % getAutho())
+              azheaders = defaultHeaders
+              azheaders['X-Requested-With'] = 'XMLHttpRequest'
+              getRequest(url, udata, azheaders)
+        getPlaylists()
+
+
+def deleteList(puid):
+         url = VEVOAPI % ('/me/playlist/%s?token=%s') % (puid, getAutho())
+         azheaders = defaultHeaders
+         azheaders['X-Requested-With'] = 'XMLHttpRequest'
+         getRequest(url, ' ', azheaders, doDelete=True )
+         xbmc.executebuiltin('XBMC.Container.Update("%s?mode=GP")' % (sys.argv[0]))
+
+
+def getListID():
+              token = getAutho()
+              uid = getMe(token)
+              html = getRequest(VEVOAPI % ('/user/%s/playlists?token=%s' % (uid,token)))
+              a = json.loads(html)
+              ilist=[]
+              nlist=[]
+              for b in a:
+                nlist.append(b['name'])
+                ilist.append(b['playlistId'])
+              dialog = xbmcgui.Dialog()
+              choice = dialog.select('Choose a playlist', nlist)
+              return ilist[choice]
+
+
+def addtoList(isrc):
+              updateList(getListID(), doAdd=isrc)
+
+def delfmList(puid, isrc):
+              updateList(puid, doDel=isrc)
+              xbmc.executebuiltin('XBMC.Container.Update("%s?mode=GL&url=%s")' % (sys.argv[0], qp(puid)))
+              
+
+def updateList(puid, name = None, desc = None, doAdd = None, doDel = None, imageUrl = None):
+              token = getAutho()
+              html = getRequest(VEVOAPI % ('/playlist/%s?token=%s' % (puid, token)))
+              a = json.loads(html)
+              ud = 'playlistId=%s' % qp(puid)
+              if name == None : name = a['name']
+              ud += '&name=%s' % qp(name)
+              if desc == None : desc = a['description']
+              ud += "&description=%s" % qp(desc)
+              if imageUrl == None: imageUrl = a['imageUrl']
+              ud += "&imageUrl=%s" % qp(imageUrl)
+              b = a["videos"]
+              for c in b:
+                 if c['isrc'] == doDel: continue
+                 else: ud += "&Isrcs=%s" % qp(c['isrc'])
+              if doAdd != None : ud += "&Isrcs=%s" % qp(doAdd)
+              udata = ud
+              azheaders = defaultHeaders
+              azheaders['X-Requested-With'] = 'XMLHttpRequest'
+              url = VEVOAPI % ('/me/playlist/%s?token=%s' % (puid, token))
+              html  = getRequest(url, udata , azheaders, doPut=True)
+
 
 
 # MAIN EVENT PROCESSING STARTS HERE
@@ -318,7 +444,7 @@ p = parms.get
 try:    mode = p('mode')
 except: mode = None
 
-if mode==  None:  getSources(p('fanart'))
+if mode==  None:  getSources()
 elif mode=='GX':  getChannels(p('url'))
 elif mode=='GA':  getArtist(p('url'))
 elif mode=='GG':  getGenre(p('url'))
@@ -326,5 +452,11 @@ elif mode=='GS':  getSort(p('url'))
 elif mode=='GD':  getData(p('url'))
 elif mode=='GV':  getVideo(p('url'))
 elif mode=='GQ':  getQuery(p('url'))
+elif mode=='GP':  getPlaylists()
+elif mode=='GL':  getList(p('url'))
+elif mode=='AP':  addtoList(p('url'))
+elif mode=='RP':  delfmList(p('puid'), p('url'))
+elif mode=='CP':  createList()
+elif mode=='DP':  deleteList(p('url'))
 
 xbmcplugin.endOfDirectory(int(sys.argv[1]))
