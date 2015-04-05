@@ -226,8 +226,15 @@ def getData(durl):
               durl = uqp(durl).replace(' ','+')
               url = durl % getAutho()
               log( "GD url = "+str(url))
-              html = getRequest(url)
-              a = json.loads(html)
+              html = getRequest(url, alert=False)
+              try:
+                a = json.loads(html)
+                if '/search' in durl:
+                   if len(a['videos']) == 0: raise ValueError('No Videos')
+              except:
+                 xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( __addonname__,__language__(30011)  , 5000) )
+                 getSources()
+                 return
               loadData(durl,a)
 
 
@@ -293,7 +300,7 @@ def loadData(durl,a, PlayList = None):
                   u = '%s?mode=GV&url=%s' %(sys.argv[0], qp(url))
                   liz=xbmcgui.ListItem( vname , None , img, img)
                   if PlayList != None:
-                     cm = [(__language__(30070),'XBMC.RunPlugin(%s?mode=RP&url=%s&puid=%s)' % (sys.argv[0],isrc, PlayList))]
+                     cm = [(__language__(30070),'XBMC.Container.Update(%s?mode=RP&url=%s&puid=%s)' % (sys.argv[0],isrc, PlayList))]
                   else:
                      cm = [(__language__(30071),'XBMC.RunPlugin(%s?mode=AP&url=%s)' % (sys.argv[0],isrc))]
 
@@ -344,7 +351,8 @@ def getPlaylists():
                   plot = b["description"]
                   u = '%s?mode=GL&url=%s' %(sys.argv[0], qp(b["playlistId"]))
                   liz=xbmcgui.ListItem( name, None , img, img)
-                  cm = [(__language__(30072),'XBMC.RunPlugin(%s?mode=DP&url=%s)' % (sys.argv[0], b["playlistId"]))]
+                  cm = [(__language__(30072),'XBMC.Container.Refresh(%s?mode=DP&url=%s)' % (sys.argv[0], b["playlistId"])),
+                        (__language__(30075),'XBMC.Container.Refresh(%s?mode=RL&url=%s)' % (sys.argv[0], b["playlistId"]))]
                   liz.addContextMenuItems(cm)
                   liz.setInfo( 'Video', { "Title": name, "Plot" : plot })
                   liz.setProperty('fanart_image', addonfanart)
@@ -380,9 +388,20 @@ def deleteList(puid):
          azheaders = defaultHeaders
          azheaders['X-Requested-With'] = 'XMLHttpRequest'
          getRequest(url, ' ', azheaders, doDelete=True )
-         xbmc.executebuiltin('XBMC.Container.Update("%s?mode=GP")' % (sys.argv[0]))
+         getPlaylists()
 
-
+def renameList(puid):
+        html = getRequest(VEVOAPI % ('/playlist/%s?token=%s' % (puid, getAutho())))
+        a = json.loads(html)
+        oldname = a["name"]
+        keyb = xbmc.Keyboard(oldname, __language__(30075))
+        keyb.doModal()
+        if (keyb.isConfirmed()):
+              newname = keyb.getText()
+              if len(newname) > 0: 
+                 updateList(puid, name=newname)
+                 getPlaylists()
+         
 def getListID():
               token = getAutho()
               uid = getMe(token)
@@ -399,11 +418,13 @@ def getListID():
 
 
 def addtoList(isrc):
-              updateList(getListID(), doAdd=isrc)
+              puid = getListID()
+              updateList(puid, doAdd=isrc)
+              cod = False
 
 def delfmList(puid, isrc):
               updateList(puid, doDel=isrc)
-              xbmc.executebuiltin('XBMC.Container.Update("%s?mode=GL&url=%s")' % (sys.argv[0], qp(puid)))
+              getList(puid)
               
 
 def updateList(puid, name = None, desc = None, doAdd = None, doDel = None, imageUrl = None):
@@ -432,7 +453,6 @@ def updateList(puid, name = None, desc = None, doAdd = None, doDel = None, image
 
 # MAIN EVENT PROCESSING STARTS HERE
 
-xbmcplugin.setContent(int(sys.argv[1]), 'musicvideos')
 
 parms = {}
 try:
@@ -443,6 +463,8 @@ except:  parms = {}
 p = parms.get
 try:    mode = p('mode')
 except: mode = None
+
+if (mode != 'AP'): xbmcplugin.setContent(int(sys.argv[1]), 'musicvideos')
 
 if mode==  None:  getSources()
 elif mode=='GX':  getChannels(p('url'))
@@ -458,5 +480,6 @@ elif mode=='AP':  addtoList(p('url'))
 elif mode=='RP':  delfmList(p('puid'), p('url'))
 elif mode=='CP':  createList()
 elif mode=='DP':  deleteList(p('url'))
+elif mode=='RL':  renameList(p('url'))
 
-xbmcplugin.endOfDirectory(int(sys.argv[1]))
+if (mode !='AP'): xbmcplugin.endOfDirectory(int(sys.argv[1]))
