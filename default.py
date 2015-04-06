@@ -472,15 +472,14 @@ def getLibArtists():
            a = json.loads(jsonRespond)
            ilist = []
            for b in a["result"]["artists"]:
-               try:
-                 name = b["artist"].decode(UTF8, errors='ignore')
-               except:
-                 continue
+               print "b = "+str(b)
+               name = b["artist"]
                img = b["thumbnail"]
                if img == None : img = icon
                fanart = b["fanart"]
                if fanart == '' : fanart = addonfanart
-               u = '%s?mode=GF&url=%s' %(sys.argv[0], qp(name))
+               try:  u = '%s?mode=GF&url=%s' %(sys.argv[0], qp(name))
+               except: continue
                liz=xbmcgui.ListItem(name, None , img, img)
                liz.setInfo( 'Video', { "Title": name })
                liz.setProperty('fanart_image', fanart)
