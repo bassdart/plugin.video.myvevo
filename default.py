@@ -14,6 +14,7 @@ import json
 VEVOBASE = 'http://www.vevo.com%s'
 VEVOAPI  = 'https://apiv2.vevo.com%s'
 UTF8     = 'utf-8'
+MAXPLISTITEMS = 25
 
 addon         = xbmcaddon.Addon('plugin.video.myvevo')
 __addonname__ = addon.getAddonInfo('name')
@@ -38,8 +39,14 @@ premieresIcon = xbmc.translatePath(os.path.join(home, 'resources','media','premi
 favoritesIcon = xbmc.translatePath(os.path.join(home, 'resources','media','favorites.png'))
 
 
+itemspage = [25,50,75,100,125,150,175,200]
+try:    maxitems = itemspage[int(addon.getSetting('perpage'))]
+except: maxitems = 25
 
-maxitems      = 25
+bitrates = [600,900,1400,1800,2600,3400,4400,5400]
+try:    maxbitrate = bitrates[int(addon.getSetting('bitrate'))]
+except: maxbitrate = 5400
+
 
 def log(txt):
     message = '%s: %s' % (__addonname__, txt.encode('ascii', 'ignore'))
@@ -354,7 +361,13 @@ def getVideo(caturl):
               a    = json.loads(html)
               for b in a:
                 if b["version"] == 2:
-                   liz = xbmcgui.ListItem(path = b["url"])
+                   data = getRequest(b["url"])
+                   data = data+'#'
+                   urls = re.compile('CODECS=".+?"(.+?)#').findall(data)
+                   for url in urls:
+                       if (int(url.split('/',1)[0]) <= maxbitrate): vurl = url
+                   vurl = '%s/%s' % (b["url"].rsplit('/',1)[0] , vurl.strip())
+                   liz = xbmcgui.ListItem(path = vurl)
                    xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, liz)
 
 def getMe(token):
@@ -470,6 +483,9 @@ def updateList(puid, name = None, desc = None, doAdd = None, doDel = None, image
               if imageUrl == None: imageUrl = a['imageUrl']
               ud += "&imageUrl=%s" % qp(imageUrl)
               b = a["videos"]
+              if (doAdd != None) and (len(b) >= MAXPLISTITEMS):
+                 xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( __addonname__,__language__(30077)  , 5000) )
+                 return                 
               for c in b:
                  if c['isrc'] == doDel: continue
                  else: ud += "&Isrcs=%s" % qp(c['isrc'])
@@ -489,7 +505,6 @@ def getLibArtists():
            a = json.loads(jsonRespond)
            ilist = []
            for b in a["result"]["artists"]:
-               print "b = "+str(b)
                name = b["artist"]
                img = b["thumbnail"]
                if img == None : img = icon

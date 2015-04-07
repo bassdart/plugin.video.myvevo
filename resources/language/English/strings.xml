@@ -39,6 +39,14 @@
        <string id="30074">New Playlist Name</string>
        <string id="30075">Rename Playlist</string>
        <string id="30076">Favorite Artists</string>
+       <string id="30077">Playlist Full - Item NOT added</string>
+
+       <string id="30080">View</string>
+       <string id="30081">Per Page</string>
+
+       <string id="30085">Streaming</string>
+       <string id="30086">Chosen Bitrate (kbps)</string>
+
 
 </strings>
 
