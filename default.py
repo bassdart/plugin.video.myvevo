@@ -25,6 +25,20 @@ uqp = urllib.unquote_plus
 home          = addon.getAddonInfo('path').decode(UTF8)
 icon          = xbmc.translatePath(os.path.join(home, 'icon.png'))
 addonfanart   = xbmc.translatePath(os.path.join(home, 'fanart.jpg'))
+
+nextIcon     = xbmc.translatePath(os.path.join(home, 'resources','media','next.png'))
+searchIcon   = xbmc.translatePath(os.path.join(home, 'resources','media','search.png'))
+tvIcon       = xbmc.translatePath(os.path.join(home, 'resources','media','tv.png'))
+artistsIcon  = xbmc.translatePath(os.path.join(home, 'resources','media','artists.png'))
+playlistsIcon = xbmc.translatePath(os.path.join(home, 'resources','media','playlists.png'))
+trendingIcon = xbmc.translatePath(os.path.join(home, 'resources','media','trending.png'))
+liveIcon     = xbmc.translatePath(os.path.join(home, 'resources','media','live.png'))
+videosIcon   = xbmc.translatePath(os.path.join(home, 'resources','media','videos.png'))
+premieresIcon = xbmc.translatePath(os.path.join(home, 'resources','media','premieres.png'))
+favoritesIcon = xbmc.translatePath(os.path.join(home, 'resources','media','favorites.png'))
+
+
+
 maxitems      = 25
 
 def log(txt):
@@ -111,20 +125,23 @@ def getBase():
 
 
 def getSources():
+
+           xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+
            a = getBase()
            ilist = []
-           for name, url, mode in [(__language__(30060),VEVOAPI % '/tv/channels?withShows=true&hoursAhead=24&token=%s','GX'),
-                                   (__language__(30061),VEVOAPI % '/now?page=1&size=%s&token=%s' % (str(maxitems),'%s'),'GD'),
-                                   (__language__(30062),VEVOAPI % '/artists?page=1&size=%s' % str(maxitems),'GG'),
-                                   (__language__(30063),VEVOAPI % '/videos?page=1&size=%s' % str(maxitems),'GG'),
-                                   (__language__(30064),VEVOAPI % '/videos?page=1&size=%s&ispremiere=true&sort=MostRecent&token=%s' % (str(maxitems),'%s'),'GD'),
-                                   (__language__(30065),VEVOAPI % '/videos?page=1&size=%s&islive=true&sort=MostRecent&token=%s'  % (str(maxitems),'%s'),'GD'),
-                                   (__language__(30076), ' ', "LA"),
-                                   (__language__(30066), ' ', "GP"),
-                                   (__language__(30067),VEVOAPI % '/videos?page=1&size=%s' % str(maxitems),'GQ')]:
+           for name, url, mode, img in [(__language__(30060),VEVOAPI % '/tv/channels?withShows=true&hoursAhead=24&token=%s','GX', tvIcon),
+                                   (__language__(30061),VEVOAPI % '/now?page=1&size=%s&token=%s' % (str(maxitems),'%s'),'GD', trendingIcon),
+                                   (__language__(30062),VEVOAPI % '/artists?page=1&size=%s' % str(maxitems),'GG', artistsIcon),
+                                   (__language__(30063),VEVOAPI % '/videos?page=1&size=%s' % str(maxitems),'GG', videosIcon),
+                                   (__language__(30064),VEVOAPI % '/videos?page=1&size=%s&ispremiere=true&sort=MostRecent&token=%s' % (str(maxitems),'%s'),'GD', premieresIcon),
+                                   (__language__(30065),VEVOAPI % '/videos?page=1&size=%s&islive=true&sort=MostRecent&token=%s'  % (str(maxitems),'%s'),'GD', liveIcon),
+                                   (__language__(30076), ' ', "LA", favoritesIcon),
+                                   (__language__(30066), ' ', "GP", playlistsIcon),
+                                   (__language__(30067),VEVOAPI % '/videos?page=1&size=%s' % str(maxitems),'GQ', searchIcon)]:
 
               u = '%s?mode=%s&url=%s' %(sys.argv[0], mode, qp(url))
-              liz=xbmcgui.ListItem(name, None , icon, icon)
+              liz=xbmcgui.ListItem(name, None , img, None)
               liz.setInfo( 'Video', { "Title": name })
               liz.setProperty('fanart_image', addonfanart)
               ilist.append((u, liz, True))
@@ -254,7 +271,7 @@ def loadData(durl,a, PlayList = None, aName=None):
                   ilist.append((u, liz, True))
                 if pnext != None:
                   u = '%s?mode=GD&url=%s' %(sys.argv[0], qp(pnext))
-                  liz=xbmcgui.ListItem( '[COLOR blue]%s[/COLOR]' % __language__(30068), None , icon, icon)
+                  liz=xbmcgui.ListItem( '[COLOR blue]%s[/COLOR]' % __language__(30068), None , nextIcon, nextIcon)
                   liz.setProperty('fanart_image', addonfanart)
                   ilist.append((u, liz, True))
                 xbmcplugin.addDirectoryItems(int(sys.argv[1]), ilist, len(ilist))
@@ -326,7 +343,7 @@ def loadData(durl,a, PlayList = None, aName=None):
                   ilist.append((u, liz, False))
               if pnext != None:
                   u = '%s?mode=GD&url=%s' %(sys.argv[0], qp(pnext))
-                  liz=xbmcgui.ListItem( '[COLOR blue]%s[/COLOR]' % __language__(30068), None , icon, icon)
+                  liz=xbmcgui.ListItem( '[COLOR blue]%s[/COLOR]' % __language__(30068), None , nextIcon, nextIcon)
                   liz.setProperty('fanart_image', addonfanart)
                   ilist.append((u, liz, True))
               xbmcplugin.addDirectoryItems(int(sys.argv[1]), ilist, len(ilist))
