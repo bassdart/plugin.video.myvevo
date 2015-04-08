@@ -4,6 +4,7 @@ plugin.video.myvevo
 
 Kodi Addon for VEVO website
 
+Version 2.0.10 Removed limit on artists to import from library
 Version 2.0.9 Added bitrate selection
 Version 2.0.8 Added Flat Icons
 Version 2.0.7 json library fix for android

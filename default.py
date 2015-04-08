@@ -500,7 +500,7 @@ def updateList(puid, name = None, desc = None, doAdd = None, doDel = None, image
 
 
 def getLibArtists():
-           json_cmd= '{"jsonrpc": "2.0", "method": "AudioLibrary.GetArtists", "params": { "limits": { "start" : 0, "end": 100 }, "properties": [ "thumbnail", "fanart", "genre" ], "sort": { "order": "ascending", "method": "artist", "ignorearticle": true } }, "id": 1}'
+           json_cmd= '{"jsonrpc": "2.0", "method": "AudioLibrary.GetArtists", "params": { "limits": { "start" : 0 }, "properties": [ "thumbnail", "fanart", "genre" ], "sort": { "order": "ascending", "method": "artist", "ignorearticle": true } }, "id": 1}'
            jsonRespond = xbmc.executeJSONRPC(json_cmd)
            a = json.loads(jsonRespond)
            ilist = []
