@@ -377,30 +377,37 @@ class myAddon(t1mAddon):
 
 
   def getAddonVideo(self,url):
-      if not '.m3u8' in url:
-          if ('/' in url):
-              url = url.rsplit('/',1)[1]
-          url = ('https://apiv2.vevo.com/video/%s/streams/mpd?token=%s' % (url, self.getAutho()))
-          a = self.getAPI(url)
-          for b in a:
-              url = b.get('url')
-              if not url is None:
-                  break
-      thumb = xbmc.getInfoLabel('ListItem.Art(thumb)')
-      liz = xbmcgui.ListItem(path = url, thumbnailImage = thumb)
-      infoList ={}
-      infoList['Artist'] = []
-      infoList['Artist'].append(xbmc.getInfoLabel('ListItem.Artist'))
-      infoList['Title'] = xbmc.getInfoLabel('ListItem.Title')
-      vyear = xbmc.getInfoLabel('ListItem.Year')
-      if vyear is not None and vyear != 0:
-          infoList['Year'] = vyear
-      infoList['Plot'] = xbmc.getInfoLabel('ListItem.Plot')
-      infoList['Studio'] = xbmc.getInfoLabel('ListItem.Studio')
-      infoList['Album'] = xbmc.getInfoLabel('ListItem.Album')
-      infoList['Duration'] = xbmc.getInfoLabel('ListItem.Duration')
-      infoList['mediatype']= 'musicvideo'
-      liz.setInfo('video', infoList)
-      liz.setProperty('inputstreamaddon','inputstream.adaptive')
-      liz.setProperty('inputstream.adaptive.manifest_type','mpd')
-      xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, liz)
+    if not '.m3u8' in url:
+        if ('/' in url):
+            url = url.rsplit('/',1)[1]
+        xbmcversion = int(xbmc.getInfoLabel('System.BuildVersion')[:2])
+        if xbmcversion < 17:
+            url = ('plugin://plugin.video.reddit_viewer/?mode=play&url=https://www.vevo.com/watch/%s' % (url))
+            message = u'Fallback playback with youtube-dl via Reddit Viewer for Kodi < 17 aka Krypton'
+            xbmc.log(msg=message.encode('utf-8'), level=xbmc.LOGDEBUG)
+        else:
+            url = ('https://apiv2.vevo.com/video/%s/streams/mpd?token=%s' % (url, self.getAutho()))
+            a = self.getAPI(url)
+            for b in a:
+                url = b.get('url')
+                if not url is None:
+                    break
+        thumb = xbmc.getInfoLabel('ListItem.Art(thumb)')
+        liz = xbmcgui.ListItem(path = url, thumbnailImage = thumb)
+        infoList ={}
+        infoList['Artist'] = []
+        infoList['Artist'].append(xbmc.getInfoLabel('ListItem.Artist'))
+        infoList['Title'] = xbmc.getInfoLabel('ListItem.Title')
+        vyear = xbmc.getInfoLabel('ListItem.Year')
+        if vyear is not None and vyear != 0:
+            infoList['Year'] = vyear
+        infoList['Plot'] = xbmc.getInfoLabel('ListItem.Plot')
+        infoList['Studio'] = xbmc.getInfoLabel('ListItem.Studio')
+        infoList['Album'] = xbmc.getInfoLabel('ListItem.Album')
+        infoList['Duration'] = xbmc.getInfoLabel('ListItem.Duration')
+        infoList['mediatype']= 'musicvideo'
+        liz.setInfo('video', infoList)
+        if xbmcversion > 16:
+            liz.setProperty('inputstreamaddon','inputstream.adaptive')
+            liz.setProperty('inputstream.adaptive.manifest_type','mpd')
+        xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, liz)
