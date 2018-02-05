@@ -381,7 +381,7 @@ class myAddon(t1mAddon):
         if ('/' in url):
             url = url.rsplit('/',1)[1]
         xbmcversion = int(xbmc.getInfoLabel('System.BuildVersion')[:2])
-        if xbmcversion < 17:
+        if (xbmcversion < 17 or self.addon.getSetting('login_name') == ''):
             url = ('plugin://plugin.video.reddit_viewer/?mode=play&url=https://www.vevo.com/watch/%s' % (url))
             message = u'Fallback playback with youtube-dl via Reddit Viewer for Kodi < 17 aka Krypton'
             xbmc.log(msg=message.encode('utf-8'), level=xbmc.LOGDEBUG)
@@ -407,7 +407,7 @@ class myAddon(t1mAddon):
         infoList['Duration'] = xbmc.getInfoLabel('ListItem.Duration')
         infoList['mediatype']= 'musicvideo'
         liz.setInfo('video', infoList)
-        if xbmcversion > 16:
+        if (xbmcversion > 16 and self.addon.getSetting('login_name') != ''):
             liz.setProperty('inputstreamaddon','inputstream.adaptive')
             liz.setProperty('inputstream.adaptive.manifest_type','mpd')
         xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, liz)
