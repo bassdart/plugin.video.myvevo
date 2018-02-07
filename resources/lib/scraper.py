@@ -92,8 +92,8 @@ class myAddon(t1mAddon):
               (image,iUrl,name) = re.compile('srcSet="(.+?)".+?class="feed-item-title" href="(.+?)">(.+?)<', re.DOTALL).search(item).groups()
           name = h.unescape(name.decode(UTF8))
           infoList = {}
-          print "******* URL = "+str(url)
-          print "utem = "+str(item)
+#          print "******* URL = "+str(url)
+#          print "utem = "+str(item)
           if iUrl.startswith('/genres/'):
               mode = 'GS'
               name = name.upper()
@@ -397,13 +397,17 @@ class myAddon(t1mAddon):
   def getAddonVideo(self,url):
 #      if not '.m3u8' in url:
       if ('/' in url):
-              print "******************************************** url = "+str(url)
+#              print "******************************************** url = "+str(url)
 #              url = url.rsplit('/',1)[1]
               html = self.getRequest(url)
-              print "url = "+str(url)
-              print "html = "+str(html)
-              url = re.compile('\.streamsV3\.4"\:\{"quality"\:null,"url"\:"(.+?)"', re.DOTALL).search(html).group(1)
-              print "manifestUrl = "+str(url)
+#              print "url = "+str(url)
+#              print "html = "+str(html)
+              url = re.compile('\.streamsV3\.4"\:\{"quality"\:null,"url"\:"(.+?)"', re.DOTALL).search(html)
+              if not url is None:
+                  url = url.group(1)
+              else:
+                  url = re.compile('\.streamsV3\.7"\:\{"quality"\:null,"url"\:"(.+?)"', re.DOTALL).search(html).group(1)
+#              print "manifestUrl = "+str(url)
       else:
           url = ('https://apiv2.vevo.com/video/%s/streams/mpd?token=%s' % (url, self.getAutho()))
           a = self.getAPI(url)
