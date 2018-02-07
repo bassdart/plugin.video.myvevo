@@ -12,9 +12,7 @@ import xbmcgui
 import xbmc
 import sys
 import os
-import HTMLParser
 
-h = HTMLParser.HTMLParser()
 uqp = urllib.unquote_plus
 qp  = urllib.quote_plus
 UTF8 = 'utf-8'
@@ -33,15 +31,9 @@ class myAddon(t1mAddon):
       uheaders['X-Requested-With'] = 'XMLHttpRequest'
       uheaders['Connection'] = 'keep-alive'
       html  = self.getRequest('https://accounts.vevo.com/token', udata , uheaders)
-      try:
-          a = json.loads(html)
-      except:
-          if not getMe:
-              return(None)
-          else:
-              return(None,None)
+      a = json.loads(html)
       if not getMe:
-          return a.get('legacy_token')
+          return a['legacy_token']
       uheaders['Authorization'] = 'Bearer %s' % a['access_token']
       html = self.getRequest('https://users.vevo.com/user/me', None, uheaders)
       b = json.loads(html)
@@ -59,13 +51,11 @@ class myAddon(t1mAddon):
 
   def getAddonMenu(self,url,ilist):
       addonLanguage = self.addon.getLocalizedString
-      menu = [('Genres', 'https://www.vevo.com/genres', 'GC'),
-              ('Favorite Artists','GM', 'GM'),
-              ('Search','Search', 'GE')]
-      a = self.getAutho()
-      if not a is None:
-          menu.append((addonLanguage(30003),'GS','GS'))
-
+      menu = [(addonLanguage(30000),VEVOAPI+'/now?page=1&size=50&token=','GE'),
+              (addonLanguage(30001),'/genres?page=1&size=50', 'GC'),
+              (addonLanguage(30002),'GM','GM'),
+              (addonLanguage(30003),'GS','GS'),
+              (addonLanguage(30004),'Search', 'GE')]
       for name, url, mode in menu:
           ilist = self.addMenuItem(name, mode, ilist, url, self.addonIcon, self.addonFanart, None, isFolder=True)
       return(ilist)
@@ -73,63 +63,38 @@ class myAddon(t1mAddon):
 
   def getAddonCats(self,url,ilist):
       addonLanguage = self.addon.getLocalizedString
-      contextMenu = []
-      html = self.getRequest(url)
-      if '/playlist/' in url:
-          feedItems = re.compile('<div class="link-container"(.+?)<span class="share-label">', re.DOTALL).findall(html)
-      else:
-          feedItems= re.compile('<li class="feedV2-item(.+?)</li>', re.DOTALL).findall(html)
-          if feedItems == []:
-              feedItems= re.compile('<div class="feedV2-item(.+?)<div class="modal-container"', re.DOTALL).findall(html)
-      for item in feedItems:
-          if ('/artist/' in url):
-              (iUrl,image,name) = re.compile('href="(.+?)".+?srcSet="(.+?)".+?class="feed-item-title">(.+?)<', re.DOTALL).search(item).groups()
-          elif ('/playlist/' in url):
-              (image,name) = re.compile('srcSet="(.+?)".+?class="artist"><span>(.+?)<', re.DOTALL).search(item).groups()
-              iUrl = image.split('/thumb/video/',1)[1]
-              iUrl = iUrl.split('/',1)[0]
-          else:
-              (image,iUrl,name) = re.compile('srcSet="(.+?)".+?class="feed-item-title" href="(.+?)">(.+?)<', re.DOTALL).search(item).groups()
-          name = h.unescape(name.decode(UTF8))
-          infoList = {}
-          print "******* URL = "+str(url)
-          print "utem = "+str(item)
-          if iUrl.startswith('/genres/'):
-              mode = 'GS'
-              name = name.upper()
-          elif (('?page=' in url) or ('/artist/' in url) or ('/playlist/' in url)) and (not ('/popular-artists' in url) and not ('/playlists' in url)):
-              mode = 'GV'
-              infoList['Artist'] = name.split('&')
-#              (iUrl, title) = re.compile('<a class="feed-item-subtitle" href="(.+?)">(.+?)</',re.DOTALL).search(item).groups()
-              if ('/artist/' in url):
-                  title = re.compile('class="feed-item-subtitle">(.+?)</',re.DOTALL).search(item).group(1)
-              elif ('/playlist/' in url):
-                  title = re.compile('class="video-name">(.+?)</',re.DOTALL).search(item).group(1)
-              else:
-                  (iUrl, title) = re.compile('class="feed-item-subtitle" href="(.+?)">(.+?)</',re.DOTALL).search(item).groups()
-              title = h.unescape(title.decode(UTF8))
-              title = title.replace('<h3>','',1)
-              infoList['Plot'] = '"%s" by %s' % (title, name)
-              name = title
-              infoList['mediatype'] = 'musicvideo'
-              contextMenu = [(addonLanguage(30013),'XBMC.RunPlugin(%s?mode=DF&url=AP%s)' % (sys.argv[0],'https://www.vevo.com' + iUrl)),
-                             (addonLanguage(30012),'XBMC.RunPlugin(%s?mode=DF&url=AL%s)' % (sys.argv[0],'https://www.vevo.com' + iUrl))]
-          else:
-              mode = 'GC'
-          infoList['Title'] = name
-          if not '/playlist/' in url:
-               iUrl = 'https://www.vevo.com' + iUrl
-          image = 'https:' + image
-          ilist = self.addMenuItem(name, mode, ilist, iUrl, image, image, infoList, isFolder=(not(mode == 'GV')), cm=contextMenu )
-
-
-      nextPTR = re.compile('<div class="page">(.+?)</div><a class="next page-button" rel="next" href="(.+?)">next</a>', re.DOTALL).search(html)
-
-      if nextPTR is not None:
-          (pageName, nextUrl) = nextPTR.groups()
-          nextUrl = 'https://www.vevo.com' + nextUrl
-          pageName = '[COLOR blue]'+pageName+' '+addonLanguage(30005)+'[/COLOR]'
-          ilist = self.addMenuItem(pageName, 'GC', ilist, nextUrl, self.addonIcon, self.addonFanart, infoList,isFolder=True )
+      xbmcplugin.setContent(int(sys.argv[1]), 'files')
+      if not url.startswith('http'):
+          url = VEVOAPI + url
+      a = self.getAPI(url)
+      print "a="+str(a)
+      infoList = None
+      originUrl = url
+      nextUrl = None
+      if '&genre=' in originUrl:
+          nextUrl = a['paging'].get('next')
+          a = a['artists']
+      testing = None
+      for b in a:
+          name = b['name']
+          thumb = b['thumbnailUrl']
+          if '&genre=' in originUrl:  
+              mode = 'GE'
+              url = VEVOAPI+'/artist/%s/videos?size=50&page=1&sort=MostRecent' % b['urlSafeName']
+          else: 
+             mode = 'GC'
+             url = '/artists?page=1&size=50&genre=%s' % b['urlSafeName']
+             if testing is None:
+                 testing = self.getRequest('https://www.vevo.com/genres/%s' % b['urlSafeName'])
+                 testing = testing.split('window.__INITIAL_STORE__=',1)[1]
+                 testing = testing.split(';</script>',1)[0]
+                 z = json.loads(testing)
+                 print "z['browse']['browseData']['containers'][0]['pagedItems']['items'] = "+str(z["browse"]['browseData']['containers'][0]['pagedItems']['items'])
+          ilist = self.addMenuItem(name, mode, ilist, url, thumb, thumb, infoList, isFolder=True)
+      if nextUrl is not None:
+          nextUrl += ('&genre='+originUrl.rsplit('&genre=',1)[1])
+          name = '[COLOR blue]'+addonLanguage(30005)+'[/COLOR]'
+          ilist = self.addMenuItem(name, 'GC', ilist, nextUrl, self.addonIcon, self.addonFanart, infoList, isFolder=True)
       return(ilist)
 
 
@@ -171,17 +136,8 @@ class myAddon(t1mAddon):
 
 
   def getAddonShows(self,url,ilist):
-      if url.startswith('http'):
-          image = xbmc.getInfoLabel('ListItem.Art(thumb)')
-          sList = [('Trending Now', '/trending-videos'), ('Recently Added','/recently-added'), ('Popular Artists','/popular-artists')]
-          for (name, sUrl) in sList:
-              iUrl = url+sUrl+'?page=1'
-              ilist = self.addMenuItem(name, 'GC', ilist, iUrl, image, image, {}, isFolder=True)          
-          return(ilist)
       addonLanguage = self.addon.getLocalizedString
       token, uid = self.getAutho(getMe = True)
-      if token == None:
-          return(ilist)
       pid = url[2:]
       func = url[:2]
       uheaders = self.defaultHeaders
@@ -224,8 +180,6 @@ class myAddon(t1mAddon):
       return(ilist)
 
 
-
-
   def getAddonEpisodes(self,url,ilist):
       addonLanguage = self.addon.getLocalizedString
       url = uqp(url)
@@ -237,14 +191,11 @@ class myAddon(t1mAddon):
           keyb = xbmc.Keyboard('', addonLanguage(30004))
           keyb.doModal()
           if (keyb.isConfirmed()):
-#              url = 'https://apiv2.vevo.com/search?page=1&size=50&q=' + keyb.getText().replace(' ','+')
-              url = 'https://quest.vevo.com/search?page=1&size=50&q=' + keyb.getText().replace(' ','+')
+              url = 'https://apiv2.vevo.com/search?page=1&size=50&q=' + keyb.getText().replace(' ','+')
           else:
               return(ilist)
       elif url.startswith('GF'):
-#          url = 'https://apiv2.vevo.com/search?artistsLimit=1&page=1&size=50&skippedVideos=0&q=' + url[2:]
-#          url = 'https://apiv2.vevo.com/search?artistsLimit=1&page=1&size=50&skippedVideos=0&q=' + url[2:].replace(' ','+')
-          url = 'https://quest.vevo.com/search?artistsLimit=1&page=1&size=50&skippedVideos=0&q=' + url[2:].replace(' ','+')
+          url = 'https://apiv2.vevo.com/search?artistsLimit=1&page=1&size=50&skippedVideos=0&q=' + url[2:]
       elif url.startswith('GL'):
           url = url[2:]
           playList = re.compile('\/playlist\/(.+?)\?', re.DOTALL).search(url).group(1)
@@ -252,9 +203,7 @@ class myAddon(t1mAddon):
           url += self.getAutho()
       if not url.startswith('http'):
           url = 'https://apiv2.vevo.com' + url
-#      a = self.getAPI(url)
-      html = self.getRequest(url)
-      a = json.loads(html)
+      a = self.getAPI(url)
       nextUrl = None
       if type(a) is not list:
           nextUrl = a.get('paging')
@@ -277,8 +226,7 @@ class myAddon(t1mAddon):
               continue
           playlistId = b.get('playlistId')
           if playlistId is None:
-              url = b.get(akeys[1]) #isrc
-              url = 'https://www.vevo.com/watch/%s/%s/%s' % (b['artists'][0].get('urlSafeName'),b.get('urlSafeTitle'),b.get('isrc'))
+              url = b.get(akeys[1])
           else:
               url = '/playlist/%s?token=' % playlistId
           if url is None or url == lastUrl:
@@ -292,7 +240,7 @@ class myAddon(t1mAddon):
                   thumb = thumb[0].get('image')
           infoList = {}
           infoList['Title'] = name
-#          infoList['Plot'] = b.get('description')
+          infoList['Plot'] = b.get('description')
           artists = b.get('artists')
           infoList['Artist'] = [] 
           if artists is not None and artists != []:
@@ -306,7 +254,6 @@ class myAddon(t1mAddon):
                   infoList['Title'] = name             
               else:
                   infoList['Artist'].append(xbmc.getInfoLabel('ListItem.Artist'))
-          infoList['Plot'] = '"%s" by %s' % (name, infoList.get("Artist",[''])[0])
           vyear = b.get('year')
           if vyear is not None and vyear != 0:
               infoList['Year'] = vyear
@@ -395,16 +342,7 @@ class myAddon(t1mAddon):
 
 
   def getAddonVideo(self,url):
-#      if not '.m3u8' in url:
-      if ('/' in url):
-              print "******************************************** url = "+str(url)
-#              url = url.rsplit('/',1)[1]
-              html = self.getRequest(url)
-              print "url = "+str(url)
-              print "html = "+str(html)
-              url = re.compile('\.streamsV3\.4"\:\{"quality"\:null,"url"\:"(.+?)"', re.DOTALL).search(html).group(1)
-              print "manifestUrl = "+str(url)
-      else:
+      if not '.m3u8' in url:
           url = ('https://apiv2.vevo.com/video/%s/streams/mpd?token=%s' % (url, self.getAutho()))
           a = self.getAPI(url)
           for b in a:

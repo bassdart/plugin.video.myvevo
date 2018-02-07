@@ -4,6 +4,7 @@ plugin.video.myvevo
 
 Kodi Addon for VEVO
 
+Version 3.0.10 Butcher job for no account present.
 Version 3.0.9 changes to API and website
 Version 3.0.8 Krypton or above needed. Added mpd support thru inputstream.adaptive
 Version 3.0.7 m3u8 version fix
