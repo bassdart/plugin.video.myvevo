@@ -4,6 +4,7 @@ plugin.video.myvevo
 
 Kodi Addon for VEVO
 
+Version 3.0.12 use inputstream.adaptive for hls
 Version 3.0.11 fix for videos without MPD manifest
 Version 3.0.10 Butcher job for no account present.
 Version 3.0.9 changes to API and website
