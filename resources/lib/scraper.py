@@ -60,8 +60,11 @@ class myAddon(t1mAddon):
   def getAddonMenu(self,url,ilist):
       addonLanguage = self.addon.getLocalizedString
       menu = [('Genres', 'https://www.vevo.com/genres', 'GC'),
-              ('Favorite Artists','GM', 'GM'),
-              ('Search','Search', 'GE')]
+              ('Trending Now','https://www.vevo.com/trending-now?page=1','GC'),
+              ('Recently Added','https://www.vevo.com/recently-added?page=1','GC'),
+              ('Popular Artists','https://www.vevo.com/artists?page=1','GC'),
+              ('Search','Search', 'GE'),
+              ('Favorite Artists','GM', 'GM')]
       a = self.getAutho()
       if not a is None:
           menu.append((addonLanguage(30003),'GS','GS'))
@@ -95,7 +98,7 @@ class myAddon(t1mAddon):
           if iUrl.startswith('/genres/'):
               mode = 'GS'
               name = name.upper()
-          elif (('?page=' in url) or ('/artist/' in url) or ('/playlist/' in url)) and (not ('/popular-artists' in url) and not ('/playlists' in url)):
+          elif (('?page=' in url) or ('/artist/' in url) or ('/playlist/' in url)) and (not ('/popular-artists' in url) and not ('/playlists' in url) and not ('/artists' in url)):
               mode = 'GV'
               infoList['Artist'] = name.split('&')
 #              (iUrl, title) = re.compile('<a class="feed-item-subtitle" href="(.+?)">(.+?)</',re.DOTALL).search(item).groups()
