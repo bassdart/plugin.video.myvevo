@@ -1,6 +1,16 @@
 plugin.video.myvevo
 ================
 
+This is a forked version of plugin.video.myvevo from learningit to
+re-add compatibility with KODI Jarvis and make inputstream optional.
+For both features plugin.video.reddit_viewer and script.module.youtube.dl
+are needed and should be installed automatically from the main KODI-Repo
+on first usage (if not already installed).
+The addon name is not changed (atleast for now) so everytime a new 
+version from learningit arrives in the KODI-Repo this addon will be 
+overwritten (This will most likely not happen in Jarvis). 
+If I have time I will update (my minimal changes, most of the work is
+done by learningit) the fork if a new version comes available.
 
 Kodi Addon for VEVO
 

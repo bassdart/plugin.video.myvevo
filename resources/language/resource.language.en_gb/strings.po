@@ -89,3 +89,14 @@ msgctxt "#30018"
 msgid "VEVO Login"
 msgstr ""
 
+msgctxt "#30019"
+msgid "Playback Settings"
+msgstr ""
+
+msgctxt "#30020"
+msgid "Enable Inputstream"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Needs inputstream.adaptive (max 720p if not available)"
+msgstr ""

@@ -174,7 +174,7 @@ class myAddon(t1mAddon):
   def getAddonShows(self,url,ilist):
       if url.startswith('http'):
           image = xbmc.getInfoLabel('ListItem.Art(thumb)')
-          sList = [('Trending Now', '/trending-videos'), ('Recently Added','/recently-added'), ('Popular Artists','/popular-artists')]
+          sList = [('Trending Now', '/trending-videos'), ('Recently Added','/recently-added'), ('Playlists','/playlists'), ('Popular Artists','/popular-artists')]
           for (name, sUrl) in sList:
               iUrl = url+sUrl+'?page=1'
               ilist = self.addMenuItem(name, 'GC', ilist, iUrl, image, image, {}, isFolder=True)          
@@ -396,25 +396,34 @@ class myAddon(t1mAddon):
 
 
   def getAddonVideo(self,url):
+      xbmc.log(msg=url.encode('utf-8'), level=xbmc.LOGNOTICE)
+      xbmcversion = int(xbmc.getInfoLabel('System.BuildVersion')[:2])
       if not (url.endswith('.m3u8') or url.endswith('.mp4')):
           if ('/' in url):
-              html = self.getRequest(url)
-              url = re.compile('\.streamsV3\.4"\:\{"quality"\:null,"url"\:"(.+?)"', re.DOTALL).search(html)
-              if not url is None:
-                  url = url.group(1)
-              else:
-                  url = re.compile('\.streamsV3\.7"\:\{"quality"\:null,"url"\:"(.+?)"', re.DOTALL).search(html)
+	      if (xbmcversion < 17 or self.addon.getSetting('inputstream_enabled') == 'false'):
+		  url = url.rsplit('/',1)[1]
+    		  url = ('plugin://plugin.video.reddit_viewer/?mode=play&url=https://www.vevo.com/watch/%s' % (url))
+	      else:
+                  html = self.getRequest(url)
+                  url = re.compile('\.streamsV3\.4"\:\{"quality"\:null,"url"\:"(.+?)"', re.DOTALL).search(html)
                   if not url is None:
                       url = url.group(1)
                   else:
-                      return
+                      url = re.compile('\.streamsV3\.7"\:\{"quality"\:null,"url"\:"(.+?)"', re.DOTALL).search(html)
+                      if not url is None:
+                          url = url.group(1)
+                      else:
+                          return
           else:
-              url = ('https://apiv2.vevo.com/video/%s/streams/mpd?token=%s' % (url, self.getAutho()))
-              a = self.getAPI(url)
-              for b in a:
-                  url = b.get('url')
-                  if not url is None:
-                      break
+	      if (xbmcversion < 17 or self.addon.getSetting('inputstream_enabled') == 'false'):
+    		  url = ('plugin://plugin.video.reddit_viewer/?mode=play&url=https://www.vevo.com/watch/%s' % (url))
+	      else:
+    		  url = ('https://apiv2.vevo.com/video/%s/streams/mpd?token=%s' % (url, self.getAutho()))
+        	  a = self.getAPI(url)
+        	  for b in a:
+            	      url = b.get('url')
+            	      if not url is None:
+                	  break
       thumb = xbmc.getInfoLabel('ListItem.Art(thumb)')
       liz = xbmcgui.ListItem(path = url, thumbnailImage = thumb)
       infoList ={}
@@ -430,10 +439,14 @@ class myAddon(t1mAddon):
       infoList['Duration'] = xbmc.getInfoLabel('ListItem.Duration')
       infoList['mediatype']= 'musicvideo'
       liz.setInfo('video', infoList)
-      if url.endswith('.mpd'):
-          liz.setProperty('inputstreamaddon','inputstream.adaptive')
-          liz.setProperty('inputstream.adaptive.manifest_type','mpd')
-      elif url.endswith('.m3u8'):
-          liz.setProperty('inputstreamaddon','inputstream.adaptive')
-          liz.setProperty('inputstream.adaptive.manifest_type','hls')
+
+      if (xbmcversion > 16 and self.addon.getSetting('inputstream_enabled') == 'true'):
+          if url.endswith('.mpd'):
+              liz.setProperty('inputstreamaddon','inputstream.adaptive')
+              liz.setProperty('inputstream.adaptive.manifest_type','mpd')
+          elif url.endswith('.m3u8'):
+              liz.setProperty('inputstreamaddon','inputstream.adaptive')
+              liz.setProperty('inputstream.adaptive.manifest_type','hls')
+      else:
+          url = ('plugin://plugin.video.reddit_viewer/?mode=play&url=https://www.vevo.com/watch/%s' % (url))
       xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, liz)

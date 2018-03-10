@@ -1,3 +1,6 @@
+Version 3.0.13 add jarvis compatibility, make inputstream optional and add 
+               playlists to genres (based on learningit 3.0.13). 
+
 Version 3.0.12 use inputstream.adaptive for hls
 Version 3.0.11 fix for videos without MPD manifest
 Version 3.0.10 Butcher job for no account present.

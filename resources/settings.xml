@@ -6,5 +6,10 @@
 	   <setting id="login_pass" type="text" label="30017" enable="!eq(-1,)" option="hidden" default=""/>
 		<setting type="sep" />
 	</category>
-
+	<category label="30019">
+		<setting type="sep" />
+    	    <setting type="lsep" label="30021"/>
+	    <setting id="inputstream_enabled" type="bool" label="30020" enable="System.HasAddon(inputstream.adaptive)" default="false"/>
+		<setting type="sep" />
+	</category>
 </settings>
