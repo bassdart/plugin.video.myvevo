@@ -4,7 +4,7 @@
        version="3.0.13"
        provider-name="t1m">
   <requires>
-    <import addon="xbmc.python" version="2.25.0"/>
+    <import addon="xbmc.python" version="2.24.0"/>
     <import addon="script.module.t1mlib" version="1.0.18"/>
   </requires>
   <extension point="xbmc.python.pluginsource"
