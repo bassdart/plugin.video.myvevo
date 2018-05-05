@@ -401,8 +401,11 @@ class myAddon(t1mAddon):
       if not (url.endswith('.m3u8') or url.endswith('.mp4')):
           if ('/' in url):
 	      if (xbmcversion < 17 or self.addon.getSetting('inputstream_enabled') == 'false'):
-		  url = url.rsplit('/',1)[1]
-    		  url = ('plugin://plugin.video.reddit_viewer/?mode=play&url=https://www.vevo.com/watch/%s' % (url))
+    		  url = url.rsplit('/',1)[1]
+    		  url = ('https://www.vevo.com/watch/%s' % (url))
+    		  import YDStreamExtractor
+    		  url = YDStreamExtractor.getVideoInfo(url)
+    		  url = url.streamURL()
 	      else:
                   html = self.getRequest(url)
                   url = re.compile('\.streamsV3\.4"\:\{"quality"\:null,"url"\:"(.+?)"', re.DOTALL).search(html)
@@ -416,7 +419,10 @@ class myAddon(t1mAddon):
                           return
           else:
 	      if (xbmcversion < 17 or self.addon.getSetting('inputstream_enabled') == 'false'):
-    		  url = ('plugin://plugin.video.reddit_viewer/?mode=play&url=https://www.vevo.com/watch/%s' % (url))
+    		  url = ('https://www.vevo.com/watch/%s' % (url))
+    		  import YDStreamExtractor
+    		  url = YDStreamExtractor.getVideoInfo(url)
+    		  url = url.streamURL()
 	      else:
     		  url = ('https://apiv2.vevo.com/video/%s/streams/mpd?token=%s' % (url, self.getAutho()))
         	  a = self.getAPI(url)
@@ -425,6 +431,7 @@ class myAddon(t1mAddon):
             	      if not url is None:
                 	  break
       thumb = xbmc.getInfoLabel('ListItem.Art(thumb)')
+
       liz = xbmcgui.ListItem(path = url, thumbnailImage = thumb)
       infoList ={}
       infoList['Artist'] = []
@@ -447,6 +454,5 @@ class myAddon(t1mAddon):
           elif url.endswith('.m3u8'):
               liz.setProperty('inputstreamaddon','inputstream.adaptive')
               liz.setProperty('inputstream.adaptive.manifest_type','hls')
-      else:
-          url = ('plugin://plugin.video.reddit_viewer/?mode=play&url=https://www.vevo.com/watch/%s' % (url))
+      xbmc.log(msg=url.encode('utf-8'), level=xbmc.LOGNOTICE)
       xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, liz)

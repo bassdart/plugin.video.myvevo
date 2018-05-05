@@ -98,5 +98,5 @@ msgid "Enable Inputstream"
 msgstr ""
 
 msgctxt "#30021"
-msgid "Needs inputstream.adaptive (max 720p if not available)"
+msgid "Needs inputstream.adaptive"
 msgstr ""

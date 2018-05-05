@@ -1,3 +1,4 @@
+Version 3.0.13.2 use youtube-dl directly in Jarvis or without inputstream
 Version 3.0.13 add jarvis compatibility, make inputstream optional and add 
                playlists to genres (based on learningit 3.0.13). 
 
