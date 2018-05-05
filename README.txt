@@ -14,6 +14,10 @@ done by learningit) the fork if a new version comes available.
 
 Kodi Addon for VEVO
 
+Version 3.0.13.2 use youtube-dl directly in Jarvis or without inputstream
+Version 3.0.13.1 add jarvis compatibility, make inputstream optional and add 
+                 playlists to genres (based on learningit 3.0.13). 
+
 Version 3.0.12 use inputstream.adaptive for hls
 Version 3.0.11 fix for videos without MPD manifest
 Version 3.0.10 Butcher job for no account present.
